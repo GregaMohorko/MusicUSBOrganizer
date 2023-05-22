@@ -121,7 +121,7 @@ internal static class FileNameDeterminator
 		string trackNumberIdentifier = allTrackNumbers.Count < 2
 			? null
 			// set 02 instead of 2 if the max number is more than 9 etc. (so that the ordering is correct)
-			: audioFile.TrackNumber.ToString(new string('0', (int)allTrackNumbers.Max() / 10));
+			: audioFile.TrackNumber.ToString($"D{1 + allTrackNumbers.Max() / 10}");
 
 		string titleIdentifier = (allTitlesExceptThisOne.Count == 0 || allTrackNumbers.Count == allTitlesExceptThisOne.Count + 1)
 			? null

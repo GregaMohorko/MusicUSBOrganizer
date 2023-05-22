@@ -14,7 +14,12 @@ internal class Program
 	[STAThread]
 	static void Main()
 	{
-		DoWork();
+		try {
+			DoWork();
+		}catch(Exception ex) {
+			Console.WriteLine(ex);
+			Console.WriteLine();
+		}
 
 		Console.Write("Press any key to continue . . . ");
 		_ = Console.ReadKey(true);
