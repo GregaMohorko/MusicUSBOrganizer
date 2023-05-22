@@ -1,9 +1,17 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using MusicUSBOrganizer.PlaylistReading;
 
 namespace MusicUSBOrganizer.AudioFileReading;
 internal static class AudioFileReader
 {
+	public static List<AudioFile> ReadAllAudioMetadata(List<Playlist> playlists)
+	{
+		return playlists
+			.SelectMany(ReadAllAudioMetadata)
+			.ToList();
+	}
+
 	public static List<AudioFile> ReadAllAudioMetadata(Playlist playlist)
 	{
 		var audioFiles = new List<AudioFile>();

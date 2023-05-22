@@ -55,35 +55,28 @@ internal class Program
 		var playlists = PlaylistReader.ReadAll(playlistFiles);
 		Console.WriteLine("\tPlaylist files read.");
 
-		// for each playlist ...
-		for(int i = 0; i < playlists.Count; ++i) {
-			var playlist = playlists[i];
-			string lineStart = $"[{i + 1}/{playlists.Count}]\t";
+		// read metadata about files
+		Console.WriteLine("Reading audio files metadata ...");
+		var audioFiles = AudioFileReader.ReadAllAudioMetadata(playlists);
+		Console.WriteLine("\tAudio files metadata read.");
 
-			Console.WriteLine($"{lineStart}Processing playlist '{playlist.Name}' ...");
+		// determine new file names
+		Console.WriteLine("Determining best new file names ...");
+		var newFileNames = FileNameDeterminator.DetermineFileNames(audioFiles);
+		Console.WriteLine("\tBest new file names determined.");
 
-			// read metadata about files
-			Console.WriteLine($"{lineStart}\tReading audio files metadata ...");
-			var audioFiles = AudioFileReader.ReadAllAudioMetadata(playlist);
-			Console.WriteLine($"{lineStart}\t\tAudio files metadata read.");
+		// copy files
+		Console.WriteLine("Copying files ...");
+		var copiedFiles = CopyFiles(destinationFolder, newFileNames);
+		Console.WriteLine("\tFiles copied.");
 
-			// determine new file names
-			Console.WriteLine($"{lineStart}\tDetermining best new file names ...");
-			var newFileNames = FileNameDeterminator.DetermineFileNames(audioFiles);
-			Console.WriteLine($"{lineStart}\t\tBest new file names determined.");
+		// change title
+		Console.WriteLine("Setting track titles to file names ...");
+		SetTrackTitles(copiedFiles);
+		Console.WriteLine("\tTrack titles set to file names.");
 
-			// copy files
-			Console.WriteLine($"{lineStart}\tCopying files ...");
-			var copiedFiles = CopyFiles(destinationFolder, newFileNames);
-			Console.WriteLine($"{lineStart}\t\tFiles copied.");
-
-			// change title
-			Console.WriteLine($"{lineStart}\tSetting track titles to file names ...");
-			SetTrackTitles(copiedFiles);
-			Console.WriteLine($"{lineStart}\t\tTrack titles set to file names.");
-
-			Console.WriteLine($"{lineStart}Playlist '{playlist.Name}' processed.");
-		}
+		Console.WriteLine();
+		Console.WriteLine("Done.");
 	}
 
 	static List<string> SelectPlaylistFiles()
@@ -116,12 +109,12 @@ internal class Program
 		return dialog.SelectedPath;
 	}
 
-	static List<(AudioFile AudioFile, string NewFilePath)> CopyFiles(
+	static List<(AudioFile AudioFile, string NewFilePath, string NewTitle)> CopyFiles(
 		string destinationFolder,
-		List<(AudioFile AudioFile, string NewFileName)> filesToMove
+		List<(AudioFile AudioFile, string NewFileName, string NewTitle)> filesToMove
 		)
 	{
-		var copiedFiles = new List<(AudioFile AudioFile, string NewFilePath)>();
+		var copiedFiles = new List<(AudioFile AudioFile, string NewFilePath, string NewTitle)>();
 
 		foreach(var fileToMove in filesToMove) {
 			string folderPath = Path.Combine(destinationFolder, GetSafeFileName(fileToMove.AudioFile.Playlist.Name));
@@ -134,7 +127,7 @@ internal class Program
 					File.Copy(fileToMove.AudioFile.FilePathOriginal, newFilePath);
 				}
 			}
-			copiedFiles.Add((fileToMove.AudioFile, newFilePath));
+			copiedFiles.Add((fileToMove.AudioFile, newFilePath, fileToMove.NewTitle));
 		}
 
 		return copiedFiles;
@@ -151,12 +144,11 @@ internal class Program
 		return stringBuilder.ToString();
 	}
 
-	static void SetTrackTitles(List<(AudioFile AudioFile, string NewFilePath)> copiedFiles)
+	static void SetTrackTitles(List<(AudioFile AudioFile, string NewFilePath, string NewTitle)> copiedFiles)
 	{
 		foreach(var copiedFile in copiedFiles) {
-			string newFileName = Path.GetFileNameWithoutExtension(copiedFile.NewFilePath);
 			using var audioFileTag = TagLib.File.Create(copiedFile.NewFilePath);
-			audioFileTag.Tag.Title = newFileName;
+			audioFileTag.Tag.Title = copiedFile.NewTitle;
 			audioFileTag.Save();
 		}
 	}

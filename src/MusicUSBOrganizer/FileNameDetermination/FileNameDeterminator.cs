@@ -7,9 +7,9 @@ using MusicUSBOrganizer.AudioFileReading;
 namespace MusicUSBOrganizer.FileNameDetermination;
 internal static class FileNameDeterminator
 {
-	public static List<(AudioFile AudioFile, string NewFileName)> DetermineFileNames(List<AudioFile> audioFiles)
+	public static List<(AudioFile AudioFile, string NewFileName, string NewTitle)> DetermineFileNames(List<AudioFile> audioFiles)
 	{
-		var newFileNames = new List<(AudioFile, string)>();
+		var newFileNames = new List<(AudioFile, string, string)>();
 
 		// 1st, by Artist
 		var audioFilesByArtist = audioFiles
@@ -76,8 +76,8 @@ internal static class FileNameDeterminator
 								.ToList();
 							string titleShort = GetShortestPossibleDistinctValue(title, allTitlesExceptThisOne);
 
-							string newFileName = GetFileName(audioFile, artistShort, albumShort, titleShort, allDiscNumbersExceptThisOne, allAlbumsExceptThisOne, allTrackNumbers, allTitlesExceptThisOne);
-							newFileNames.Add((audioFile, newFileName));
+							(string newFileName, string newTitle) = GetFileName(audioFile, artistShort, albumShort, titleShort, allDiscNumbersExceptThisOne, allAlbumsExceptThisOne, allTrackNumbers, allTitlesExceptThisOne);
+							newFileNames.Add((audioFile, newFileName, newTitle));
 						}
 					}
 				}
@@ -87,7 +87,7 @@ internal static class FileNameDeterminator
 		return newFileNames;
 	}
 
-	private static string GetFileName(
+	private static (string NewFileName, string NewTitle) GetFileName(
 		AudioFile audioFile,
 		string artistShort,
 		string albumShort,
@@ -98,6 +98,8 @@ internal static class FileNameDeterminator
 		List<string> allTitlesExceptThisOne
 		)
 	{
+		const string SEPARATOR = ";";
+
 		// determine disc+album identifier
 		string discAlbumIdentifier = null;
 		if(allDiscNumbersExceptThisOne.Count > 0) {
@@ -107,7 +109,7 @@ internal static class FileNameDeterminator
 			&& allAlbumsExceptThisOne.Count > 0
 			) {
 			if(discAlbumIdentifier != null) {
-				discAlbumIdentifier += "-";
+				discAlbumIdentifier += SEPARATOR;
 			} else {
 				discAlbumIdentifier = string.Empty;
 			}
@@ -115,14 +117,19 @@ internal static class FileNameDeterminator
 		}
 		
 		// determine track number identifier
-		string trackNumberIdentifier = allTrackNumbers.Count < 2 ? null : audioFile.TrackNumber.ToString();
+		string trackNumberIdentifier = allTrackNumbers.Count < 2
+			? null
+			// set 02 instead of 2 if the max number is more than 9 etc. (so that the ordering is correct)
+			: audioFile.TrackNumber.ToString(new string('0', (int)allTrackNumbers.Max() / 10));
 
 		string titleIdentifier = (allTitlesExceptThisOne.Count == 0 || allTrackNumbers.Count == allTitlesExceptThisOne.Count + 1)
 			? null
 			: titleShort;
 
 		// return the name
-		return $"{artistShort}-{audioFile.Year}{(discAlbumIdentifier == null ? null : $"-{discAlbumIdentifier}")}{(trackNumberIdentifier == null ? null : $"-{trackNumberIdentifier}")}{(titleIdentifier == null ? null : $"-{titleIdentifier}")}-{audioFile.Bitrate}kbps-{audioFile.Title}{Path.GetExtension(audioFile.FilePathOriginal)}";
+		string newFileName = $"{artistShort}{SEPARATOR}{audioFile.Year}{(discAlbumIdentifier == null ? null : $"{SEPARATOR}{discAlbumIdentifier}")}{(trackNumberIdentifier == null ? null : $"{SEPARATOR}{trackNumberIdentifier}")}{(titleIdentifier == null ? null : $"{SEPARATOR}{titleIdentifier}")}{SEPARATOR}{audioFile.Bitrate}kbps{SEPARATOR}{audioFile.Title}{Path.GetExtension(audioFile.FilePathOriginal)}";
+		string newTitle = $"{artistShort}{SEPARATOR}{audioFile.Year}{(discAlbumIdentifier == null ? null : $"{SEPARATOR}{discAlbumIdentifier}")}{(trackNumberIdentifier == null ? null : $"{SEPARATOR}{trackNumberIdentifier}")}{(titleIdentifier == null ? null : $"{SEPARATOR}{titleIdentifier}")}{SEPARATOR}{audioFile.Title}";
+		return (newFileName, newTitle);
 	}
 
 	/// <summary>

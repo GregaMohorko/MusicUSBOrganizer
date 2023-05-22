@@ -7,6 +7,7 @@ internal class AudioFile
 	public string FilePathOriginal { get; set; }
 	public string Artist { get; set; }
 	public string Title { get; set; }
+	public string TitleNew { get; set; }
 	public uint Year { get; set; }
 	public uint DiscNumber { get; set; }
 	public string Album { get; set; }
