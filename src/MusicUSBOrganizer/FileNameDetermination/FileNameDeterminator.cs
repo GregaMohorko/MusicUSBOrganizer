@@ -52,6 +52,7 @@ internal static class FileNameDeterminator
 						.ToList();
 					var allAlbums = discNumberFilesGroup
 						.Select(x => x.Album)
+						.Where(album => album != null)
 						.Distinct()
 						.ToList();
 					foreach(var albumFilesGroup in filesByAlbum) {

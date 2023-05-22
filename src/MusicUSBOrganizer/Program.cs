@@ -71,9 +71,9 @@ internal class Program
 		Console.WriteLine("\tFiles copied.");
 
 		// change title
-		Console.WriteLine("Setting track titles to file names ...");
+		Console.WriteLine("Setting track titles ...");
 		SetTrackTitles(copiedFiles);
-		Console.WriteLine("\tTrack titles set to file names.");
+		Console.WriteLine("\tTrack titles set.");
 
 		Console.WriteLine();
 		Console.WriteLine("Done.");
